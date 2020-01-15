@@ -1,0 +1,118 @@
+* The Heretic's Emacs
+  :PROPERTIES:
+  :header-args: :tangle init.el
+  :END:
+  #+begin_src emacs-lisp
+    ;;; -*- lexical-binding: t; buffer-read-only: t -*-
+  #+end_src
+
+** Basics
+*** Libraries
+    Emacs built-in libraries are improving, but it's still broadly a
+    lot nicer to use these libraries.
+**** List API
+     #+begin_src emacs-lisp
+       (use-package dash :demand t)
+       (use-package dash-functional :demand t)
+     #+end_src
+**** String API
+     #+begin_src emacs-lisp
+      (use-package s :demand t)
+     #+end_src
+**** File API
+     #+begin_src emacs-lisp
+       (use-package f :demand t)
+     #+end_src
+**** Hashtable API
+     #+begin_src emacs-lisp
+       (use-package ht :demand t)
+     #+end_src
+*** Modeline
+**** Blackout
+     Blackout is the only mode lighter package I've found that
+     actually works with all the weird modes I use.
+     #+begin_src emacs-lisp
+       (use-package blackout :demand t)
+     #+end_src
+** Keybindings
+*** Modal Editing
+    #+begin_src emacs-lisp
+     (use-package evil
+       :hook (after-init . evil-mode)
+       :init
+       (setq evil-search-module 'evil-search)
+       (setq evil-want-integration t)
+       (setq evil-want-keybinding nil)
+       (setq evil-vsplit-window-right t)
+       (setq evil-split-window-below t))
+
+
+     (use-package evil-collection
+       :hook (after-init . evil-collection-init))
+     (use-package evil-goggles
+       :hook (after-init . evil-goggles-mode)
+       :commands evil-goggles-use-diff-faces
+       :config
+       (evil-goggles-use-diff-faces)
+       :blackout t)
+     (use-package evil-lion
+       :hook (after-init . evil-lion-mode))
+     (use-package org-evil
+       :hook (org-mode . org-evil-mode))
+     (use-package evil-nerd-commenter
+       :hook (after-init . evilnc-default-hotkeys))
+     (use-package evil-matchit
+       :hook (after-init . global-evil-matchit-mode))
+     (use-package evil-surround
+       :hook (after-init . global-evil-surround-mode))
+     (use-package evil-magit
+       :demand t
+       :after magit)
+
+     (use-package general
+       :hook (after-init . general-evil-setup)
+       :commands general-define-key
+       :config
+       (general-create-definer the-leader
+			       :prefix "SPC")
+
+       (the-leader
+	:states '(normal visual motion)
+	"" '(nil :wk "leader")
+	"SPC" '(counsel-M-x :wk "extended command"))
+       (defun the--leader-form (name key global)
+	 `(general-create-definer ,(intern (s-concat "the-" name "-leader"))
+				  :wrapping the-leader
+				  :infix ,key
+				  :global-prefix ,global))
+
+       (defmacro the-make-leaders (leaders)
+	 (dolist (leader leaders)
+	   (eval (apply 'the--leader-form leader))))
+       (the-make-leaders
+	(
+	 ("help" "h" "H-h")
+	 ("buffer" "b" "H-b")
+	 ("window" "w" "H-w")
+	 ("file" "f" "H-f")
+	 ("application" "a" "H-a")
+	 ("yank" "y" "H-y")
+	 ("mode" "m" "H-m")
+	 )
+	)
+
+       (defun the--binding-form (leader &rest def)
+	 `(,(intern (s-concat "the-" leader "-leader"))
+	   :states '(normal)
+	   "" '(nil :which-key ,(capitalize leader))
+	   ,@def))
+
+       (defmacro the-leader-bindings (keymaps)
+	 (dolist (keymap keymaps)
+	   (eval (apply 'the--binding-form keymap)))))
+    #+end_src
+
+** COMMENT Locals
+   # Local Variables:
+   # after-save-hook: the-reload-and-tangle-init-org
+   # End:
